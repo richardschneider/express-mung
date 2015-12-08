@@ -1,6 +1,6 @@
 {
   "name": "express-mung",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha",
   "description": "Prefer header for HTTP (RFC 7240)",
   "main": "index.js",
   "scripts": {
