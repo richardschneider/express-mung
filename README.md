@@ -8,7 +8,7 @@ This package allows synchronous and asynchronous transformation of an express re
     $ npm install express-mung --save
 
 Then in your middleware
- 
+
     var mung = require('express-mung');
 
     module.exports = mung.json(my_transform);
@@ -38,9 +38,9 @@ and [*That's all folks!*](https://www.youtube.com/watch?v=gBzJGckMYO4)
 
 ## Reference
 
-- `mung.json(fn)` transform the JSON body of the response.  `fn` receives the JSON an object, the `req` and `res`.  It returns the modified body.
+- `mung.json(fn)` transform the JSON body of the response.  `fn` receives the JSON as an object, the `req` and `res`.  It returns the modified body.
 
-- `mung.jsonAsync(fn)` transform the JSON body of the response.  `fn` receives the JSON an object, the `req` and `res`.  It returns a promise to a modified body.
+- `mung.jsonAsync(fn)` transform the JSON body of the response.  `fn` receives the JSON as an object, the `req` and `res`.  It returns a promise to a modified body.
 
 # License
 The MIT license

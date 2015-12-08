@@ -1,7 +1,7 @@
 {
   "name": "express-mung",
-  "version": "0.0.1-alpha",
-  "description": "Prefer header for HTTP (RFC 7240)",
+  "version": "0.0.2-alpha",
+  "description": "Transform an express response (or make until no good)",
   "main": "index.js",
   "scripts": {
     "test": "mocha"
@@ -12,7 +12,7 @@
   },
   "keywords": [
     "mung",
-    "middlware",
+    "middleware",
     "transform",
     "response",
     "express"
