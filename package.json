@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/richardschneider/express-mung#readme",
   "devDependencies": {
+    "bluebird": "^3.0.5",
     "express": "^4.13.3",
     "mocha": "^2.3.4",
     "should": "^7.1.1",
