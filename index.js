@@ -13,7 +13,11 @@ mung.json = function json (fn) {
         function hook (json) {
             let originalJson = json;
             res.json = original;
+            if (res.headersSent)
+                return res;
             json = fn(json, req, res);
+            if (res.headersSent)
+                return res;
 
             // If no returned value from fn, then assume json has been mucked with.
             if (json === undefined)
@@ -42,8 +46,13 @@ mung.jsonAsync = function json (fn) {
         let original = res.json;
         function hook (json) {
             res.json = original;
+            if (res.headersSent)
+                return;
             fn(json, req, res)
                 .then(json => {
+                    if (res.headersSent)
+                        return;
+
                     // If null, then 204 No Content
                     if (json === null)
                         return res.status(204).end();
@@ -54,8 +63,8 @@ mung.jsonAsync = function json (fn) {
                         return res.send(json);
                     }
 
-                return original.call(this, json);
-            });
+                    return original.call(this, json);
+                });
 
             return faux_fin;
         }
@@ -70,7 +79,13 @@ mung.headers = function headers (fn) {
         let original = res.end;
         function hook () {
             res.end = original;
+            if (res.headersSent)
+                return;
             fn(req, res);
+            if (res.headersSent) {
+                console.error('sending response while in mung.headers is undefined behaviour');
+                return;
+            }
 
             return original.apply(this, arguments);
         }
@@ -89,6 +104,8 @@ mung.headersAsync = function headersAsync (fn) {
             fn(req, res)
                 .then(() => {
                     res.end = original;
+                    if (res.headersSent)
+                        return;
                     original.apply(this, args);
                 });
         }

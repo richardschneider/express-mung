@@ -73,4 +73,21 @@ describe ('mung json', () => {
             .end(done);
     });
 
+    it('should abort if a response is sent', done => {
+        function error (json, req, res) {
+            res.status(403).send('no permissions')
+        }
+        let server = express()
+            .use(mung.json(error))
+            .get('/', (req, res) => res.status(200).json({ a: 'a' }).end());
+        request(server)
+            .get('/')
+            .expect(403)
+            .expect(res => {
+                res.text.should.equal('no permissions');
+                res.headers.should.have.property('content-type', 'text/html; charset=utf-8');
+            })
+            .end(done);
+    });
+
 })

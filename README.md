@@ -52,6 +52,10 @@ See the mocha [tests](https://github.com/richardschneider/express-mung/tree/mast
 
 **NOTE** when `mung.json*` receives a scalar value then the `content-type` is switched `text-plain`.
 
+**NOTE** when `mung.json*` detects that a response has been sent, it will abort.
+
+**NOTE** sending a response while in `mung.headers*` is **undefined behaviour** and will most likely result in an error.
+
 # License
 The MIT license
 
