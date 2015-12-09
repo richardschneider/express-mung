@@ -1,6 +1,6 @@
 {
   "name": "express-mung",
-  "version": "0.0.2-alpha",
+  "version": "0.1.0",
   "description": "Transform an express response (or make until no good)",
   "main": "index.js",
   "scripts": {
