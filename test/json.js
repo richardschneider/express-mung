@@ -40,5 +40,19 @@ describe ('mung json', () => {
             .end(done);
     });
 
+    it('should return the munged JSON result from a res.send', done => {
+        let server = express()
+            .use(mung.json(inspect))
+            .get('/', (req, res) => res.status(200).send({ a: 'a' }).end());
+        request(server)
+            .get('/')
+            .expect(200)
+            .expect(res => {
+                let expected = {a : 'a', 'inspected_by': 'me'};
+                res.body.should.eql(expected);
+                res.headers['content-length'].should.equal(JSON.stringify(expected).length.toString())
+            })
+            .end(done);
+    });
 
 })

@@ -1,6 +1,8 @@
 'use strict';
 
 let mung = {};
+let faux_fin = { end: () => null };
+
 
 mung.json = function json (fn) {
     return function (req, res, next) {
@@ -22,7 +24,7 @@ mung.json = function json (fn) {
         }
         res.json = hook;
 
-        next();
+        next && next();
     }
 }
 
@@ -40,11 +42,44 @@ mung.jsonAsync = function json (fn) {
                     return original.call(this, json);
             });
 
-            return { end: () => null };
+            return faux_fin;
         }
         res.json = hook;
 
-        next();
+        next && next();
+    }
+}
+
+mung.headers = function headers (fn) {
+    return function (req, res, next) {
+        let original = res.end;
+        function hook () {
+            res.end = original;
+            fn(req, res);
+
+            return original.apply(this, arguments);
+        }
+        res.end = hook;
+
+        next && next();
+    }
+}
+
+mung.headersAsync = function headersAsync (fn) {
+    return function (req, res, next) {
+        let original = res.end;
+        function hook () {
+            let args = arguments;
+            res.end = () => null;
+            fn(req, res)
+                .then(() => {
+                    res.end = original;
+                    original.apply(this, args);
+                });
+        }
+        res.end = hook;
+
+        next && next();
     }
 }
 
