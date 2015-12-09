@@ -50,6 +50,8 @@ See the mocha [tests](https://github.com/richardschneider/express-mung/tree/mast
 
 - `mung.headersAsync(fn)` transform the HTTP headers of the response.  `fn(req, res)` receives the `req` and `res`.  It returns a `promise` to modify the header(s).
 
+**NOTE** when `mung.json*` receives a scalar value then the `content-type` is switched `text-plain`.
+
 # License
 The MIT license
 

@@ -15,6 +15,10 @@ describe ('mung json', () => {
         return null;
     }
 
+    function reduce (json, req, res) {
+        return json.a;
+    }
+
     it('should return the munged JSON result', done => {
         let server = express()
             .use(mung.json(inspect))
@@ -51,6 +55,20 @@ describe ('mung json', () => {
                 let expected = {a : 'a', 'inspected_by': 'me'};
                 res.body.should.eql(expected);
                 res.headers['content-length'].should.equal(JSON.stringify(expected).length.toString())
+            })
+            .end(done);
+    });
+
+    it('should return a munged scalar result as text/plain', done => {
+        let server = express()
+            .use(mung.json(reduce))
+            .get('/', (req, res) => res.status(200).json({ a: 'a' }).end());
+        request(server)
+            .get('/')
+            .expect(200)
+            .expect(res => {
+                res.text.should.equal('a');
+                res.headers.should.have.property('content-type', 'text/plain; charset=utf-8');
             })
             .end(done);
     });

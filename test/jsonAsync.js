@@ -21,6 +21,12 @@ describe ('mung jsonAsync', () => {
             .then(json => null);
     }
 
+    function reduce (json, req, res) {
+        return Promise.resolve(json)
+            .then(json => json.a);
+    }
+
+
     it('should return the munged JSON result', done => {
         let server = express()
             .use(mung.jsonAsync(inspect))
@@ -46,5 +52,18 @@ describe ('mung jsonAsync', () => {
             .end(done);
     });
 
+    it('should return a munged scalar result as text/plain', done => {
+        let server = express()
+            .use(mung.jsonAsync(reduce))
+            .get('/', (req, res) => res.status(200).json({ a: 'alpha' }).end());
+        request(server)
+            .get('/')
+            .expect(200)
+            .expect(res => {
+                res.text.should.equal('alpha');
+                res.headers.should.have.property('content-type', 'text/plain; charset=utf-8');
+            })
+            .end(done);
+    });
 
 })

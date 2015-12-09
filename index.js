@@ -3,6 +3,9 @@
 let mung = {};
 let faux_fin = { end: () => null };
 
+function isScalar(v) {
+    return typeof v !== 'object' && !Array.isArray(v);
+}
 
 mung.json = function json (fn) {
     return function (req, res, next) {
@@ -19,6 +22,12 @@ mung.json = function json (fn) {
             // If null, then 204 No Content
             if (json === null)
                 return res.status(204);
+
+            // If scalar value, then text/plain
+            if (isScalar(json)) {
+                res.set('content-type', 'text/plain');
+                return res.send(json);
+            }
 
             return original.call(this, json);
         }
@@ -39,7 +48,13 @@ mung.jsonAsync = function json (fn) {
                     if (json === null)
                         return res.status(204).end();
 
-                    return original.call(this, json);
+                    // If scalar value, then text/plain
+                    if (isScalar(json)) {
+                        res.set('content-type', 'text/plain');
+                        return res.send(json);
+                    }
+
+                return original.call(this, json);
             });
 
             return faux_fin;
