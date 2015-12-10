@@ -79,14 +79,13 @@ mung.headers = function headers (fn) {
         let original = res.end;
         function hook () {
             res.end = original;
-            if (res.headersSent)
-                return;
-            fn(req, res);
-            if (res.headersSent) {
-                console.error('sending response while in mung.headers is undefined behaviour');
-                return;
+            if (!res.headersSent) {
+                fn(req, res);
+                if (res.headersSent) {
+                    console.error('sending response while in mung.headers is undefined behaviour');
+                    return;
+                }
             }
-
             return original.apply(this, arguments);
         }
         res.end = hook;
@@ -99,6 +98,8 @@ mung.headersAsync = function headersAsync (fn) {
     return function (req, res, next) {
         let original = res.end;
         function hook () {
+            if (res.headersSent)
+                return original.apply(this, args);
             let args = arguments;
             res.end = () => null;
             fn(req, res)
