@@ -32,9 +32,9 @@ function redact(body, req, res) {
 exports = mung.json(redact);
 ````
 
-then add to your `server.js` file
+then add to your `app.js` file (before the route handling middleware)
 ````javascript
-app.use(require('redact.js'))
+app.use(require('./redact'))
 ````
 and [*That's all folks!*](https://www.youtube.com/watch?v=gBzJGckMYO4)
 
