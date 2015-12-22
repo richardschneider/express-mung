@@ -44,4 +44,33 @@ describe ('mung headers', () => {
             .end(done);
     });
 
+    it('should 500 on a synchronous exception', done => {
+        function error (req, res) {
+            req.hopefully_fails();
+        }
+        let server = express()
+            .use(mung.headers(error))
+            .get('/', (req, res) => res.status(200).json({ a: 'a' }).end());
+        request(server)
+            .get('/')
+            .expect(500)
+            .end(done);
+    });
+
+    it('should 500 on an asynchronous exception', done => {
+        function error (req, res) {
+            return Promise.resolve(true)
+                .then(() => {
+                    req.hopefully_fails();
+            });
+        }
+        let server = express()
+            .use(mung.headersAsync(error))
+            .get('/', (req, res) => res.status(200).json({ a: 'a' }).end());
+        request(server)
+            .get('/')
+            .expect(500)
+            .end(done);
+    });
+
 })

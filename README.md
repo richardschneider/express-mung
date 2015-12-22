@@ -56,6 +56,10 @@ See the mocha [tests](https://github.com/richardschneider/express-mung/tree/mast
 
 **NOTE** sending a response while in `mung.headers*` is **undefined behaviour** and will most likely result in an error.
 
+## Exception handling
+
+`mung` catches any exception (synchronous, asynchronous or Promise reject) and sends an HTTP 500 response with the exception message.  This is done by `mung.onError(err, req, res)`, feel free to redefine it to your needs.
+
 # License
 The MIT license
 

@@ -19,6 +19,10 @@ describe ('mung json', () => {
         return json.a;
     }
 
+    function error(json, req, res) {
+        json.foo.bar.hopefully.fails();
+    }
+
     it('should return the munged JSON result', done => {
         let server = express()
             .use(mung.json(inspect))
@@ -87,6 +91,32 @@ describe ('mung json', () => {
                 res.text.should.equal('no permissions');
                 res.headers.should.have.property('content-type', 'text/html; charset=utf-8');
             })
+            .end(done);
+    });
+
+    it('should 500 on a synchronous exception', done => {
+        let server = express()
+            .use((err, req, res, next) => res.status(500).send(err.message).end())
+            .use(mung.json(error))
+            .get('/', (req, res) => res.status(200).json({ a: 'a' }).end());
+        request(server)
+            .get('/')
+            .expect(500)
+            .end(done);
+    });
+
+    it('should 500 on an asynchronous exception', done => {
+        let server = express()
+            .use((err, req, res, next) => res.status(500).send(err.message).end())
+            .use(mung.json(error))
+            .get('/', (req, res) => {
+                process.nextTick(() => {
+                    res.status(200).json({ a: 'a' }).end();
+                });
+            });
+        request(server)
+            .get('/')
+            .expect(500)
             .end(done);
     });
 
