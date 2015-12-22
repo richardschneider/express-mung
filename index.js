@@ -8,18 +8,24 @@ function isScalar(v) {
 }
 
 mung.onError = (err, req, res) => {
-    res.status(500).json({ message: err.message }).end();
+    res
+        .status(500)
+        .set('content-language', 'en')
+        .json({ message: err.message })
+        .end();
     return res;
 };
 
 mung.json = function json (fn) {
     return function (req, res, next) {
         let original = res.json;
-        function hook (json) {
+        function json_hook (json) {
             let originalJson = json;
             res.json = original;
             if (res.headersSent)
                 return res;
+            if (res.statusCode >= 400)
+                return original.call(this, json);
 
             // Run the munger
             try {
@@ -46,7 +52,7 @@ mung.json = function json (fn) {
 
             return original.call(this, json);
         }
-        res.json = hook;
+        res.json = json_hook;
 
         next && next();
     }
@@ -55,10 +61,12 @@ mung.json = function json (fn) {
 mung.jsonAsync = function json (fn) {
     return function (req, res, next) {
         let original = res.json;
-        function hook (json) {
+        function json_async_hook (json) {
             res.json = original;
             if (res.headersSent)
                 return;
+            if (res.statusCode >= 400)
+                return original.call(this, json);
             try {
                 fn(json, req, res)
                 .then(json => {
@@ -84,7 +92,7 @@ mung.jsonAsync = function json (fn) {
 
             return faux_fin;
         }
-        res.json = hook;
+        res.json = json_async_hook;
 
         next && next();
     }
@@ -93,7 +101,7 @@ mung.jsonAsync = function json (fn) {
 mung.headers = function headers (fn) {
     return function (req, res, next) {
         let original = res.end;
-        function hook () {
+        function headers_hook () {
             res.end = original;
             if (!res.headersSent) {
                 try {
@@ -108,7 +116,7 @@ mung.headers = function headers (fn) {
             }
             return original.apply(this, arguments);
         }
-        res.end = hook;
+        res.end = headers_hook;
 
         next && next();
     }
@@ -119,9 +127,9 @@ mung.headersAsync = function headersAsync (fn) {
         let original = res.end;
         let onError = e => {
             res.end = original;
-            mung.onError(e, req, res);
+            return mung.onError(e, req, res);
         };
-        function hook () {
+        function headers_async_hook () {
             if (res.headersSent)
                 return original.apply(this, args);
             let args = arguments;
@@ -139,7 +147,7 @@ mung.headersAsync = function headersAsync (fn) {
                 onError(e, req, res);
             }
         }
-        res.end = hook;
+        res.end = headers_async_hook;
 
         next && next();
     }
