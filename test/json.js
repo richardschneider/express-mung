@@ -41,7 +41,7 @@ describe ('mung json', () => {
     it('should return 204 on null JSON result', done => {
         let server = express()
             .use(mung.json(remove))
-            .get('/', (req, res) => res.status(200).json({ a: 'a' }).end());
+            .get('/', (req, res) => res.status(200).json({ a: 'a' }));
         request(server)
             .get('/')
             .expect(204)

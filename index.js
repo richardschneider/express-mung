@@ -42,7 +42,7 @@ mung.json = function json (fn) {
 
             // If null, then 204 No Content
             if (json === null)
-                return res.status(204);
+                return res.status(204).end();
 
             // If scalar value, then text/plain
             if (isScalar(json)) {
