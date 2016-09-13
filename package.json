@@ -1,6 +1,6 @@
 {
   "name": "express-mung",
-  "version": "0.4.2",
+  "version": "0.4.3,
   "description": "Transform an express response (or make until no good)",
   "main": "index.js",
   "scripts": {
@@ -18,6 +18,9 @@
     "express"
   ],
   "author": "Richard Schneider <makaretu@gmail.com>",
+  "contributors": [
+      "Ido Schachter <ido.schachter@ironsrc.com>"
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/richardschneider/express-mung/issues"
