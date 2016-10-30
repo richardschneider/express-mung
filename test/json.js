@@ -38,6 +38,34 @@ describe ('mung json', () => {
             .end(done);
     });
 
+    it('should not mung an error response (by default)', done => {
+        let server = express()
+            .use(mung.json(inspect))
+            .get('/', (req, res) => res.status(404).json({ a: 'a' }).end());
+        request(server)
+            .get('/')
+            .expect(404)
+            .expect(res => {
+                res.body.should.not.have.property('inspected_by');
+            })
+            .end(done);
+    });
+
+    it('should mung an error response when told to', done => {
+        let server = express()
+            .use(mung.json(inspect, { mungError: true }))
+            .get('/', (req, res) => res.status(404).json({ a: 'a' }).end());
+        request(server)
+            .get('/')
+            .expect(404)
+            .expect(res => {
+                let expected = {a : 'a', 'inspected_by': 'me'};
+                res.body.should.eql(expected);
+                res.headers['content-length'].should.equal(JSON.stringify(expected).length.toString())
+            })
+            .end(done);
+    });
+
     it('should return 204 on null JSON result', done => {
         let server = express()
             .use(mung.json(remove))

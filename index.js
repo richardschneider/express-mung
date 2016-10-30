@@ -16,15 +16,18 @@ mung.onError = (err, req, res) => {
     return res;
 };
 
-mung.json = function json (fn) {
+mung.json = function json (fn, options) {
     return function (req, res, next) {
         let original = res.json;
+        options = options || {};
+        let mungError = options.mungError;
+
         function json_hook (json) {
             let originalJson = json;
             res.json = original;
             if (res.headersSent)
                 return res;
-            if (res.statusCode >= 400)
+            if (!mungError && res.statusCode >= 400)
                 return original.call(this, json);
 
             // Run the munger
@@ -58,14 +61,17 @@ mung.json = function json (fn) {
     }
 }
 
-mung.jsonAsync = function json (fn) {
+mung.jsonAsync = function json (fn, options) {
     return function (req, res, next) {
         let original = res.json;
+        options = options || {};
+        let mungError = options.mungError;
+
         function json_async_hook (json) {
             res.json = original;
             if (res.headersSent)
                 return;
-            if (res.statusCode >= 400)
+            if (!mungError && res.statusCode >= 400)
                 return original.call(this, json);
             try {
                 fn(json, req, res)

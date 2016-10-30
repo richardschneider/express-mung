@@ -42,19 +42,41 @@ See the mocha [tests](https://github.com/richardschneider/express-mung/tree/mast
 
 ## Reference
 
-- `mung.json(fn)` transform the JSON body of the response.  `fn(json, req, res)` receives the JSON as an object, the `req` and `res`.  It returns the modified body. If `undefined` is returned (i.e. nothing) then the original JSON is assumed to be modified.  If `null` is returned, then a 204 No Content HTTP status is returned to client.
+### mung.json(fn, [options])
 
-- `mung.jsonAsync(fn)` transform the JSON body of the response.  `fn(json, req, res)` receives the JSON as an object, the `req` and `res`.  It returns a promise to a modified body.  The promise returns an `object.`  If it is `null` then a 204 No Content is sent to the client.
+Transform the JSON body of the response.  
 
-- `mung.headers(fn)` transform the HTTP headers of the response.  `fn(req, res)` receives the `req` and `res`.  It should modify the header(s) and then return.
+`fn(json, req, res)` receives the JSON as an object, the `req` and `res`.  It returns the modified body. If `undefined` is returned (i.e. nothing) then the original JSON is assumed to be modified.  If `null` is returned, then a 204 No Content HTTP status is returned to client.
 
-- `mung.headersAsync(fn)` transform the HTTP headers of the response.  `fn(req, res)` receives the `req` and `res`.  It returns a `promise` to modify the header(s).
+### mung.jsonAsync(fn, [options])
 
-**NOTE** when `mung.json*` receives a scalar value then the `content-type` is switched `text-plain`.
+Asynchronously transform the JSON body of the response.  
 
-**NOTE** when `mung.json*` detects that a response has been sent, it will abort.
+`fn(json, req, res)` receives the JSON as an object, the `req` and `res`.  It returns a promise to a modified body.  The promise returns an `object.`  If it is `null` then a 204 No Content is sent to the client.
 
-**NOTE** sending a response while in `mung.headers*` is **undefined behaviour** and will most likely result in an error.
+### mung.headers(fn)
+
+Transform the HTTP headers of the response.
+
+`fn(req, res)` receives the `req` and `res`.  It should modify the header(s) and then return.
+
+### mung.headersAsync(fn) 
+
+Asynchronously transform the HTTP headers of the response.  
+
+`fn(req, res)` receives the `req` and `res`.  It returns a `promise` to modify the header(s).
+
+### Notes
+
+* when `mung.json*` receives a scalar value then the `content-type` is switched `text-plain`.
+
+* when `mung.json*` detects that a response has been sent, it will abort.
+
+* sending a response while in `mung.headers*` is **undefined behaviour** and will most likely result in an error.
+
+### options
+
+- `mungError`, when `true` the munger function is always invoked.  When `false` (the default) the munger function is only invoked when the response is not in error.
 
 ## Exception handling
 
