@@ -165,22 +165,40 @@ mung.writeJson = function writeJson (fn, options = {}) {
         const mungError = options.mungError;
 
         res.write = (body, ...args) => {
+            const contentType = res.get('Content-Type');
+
+            if (res.headersSent) {
+                return;
+            }
+
+            // Do not mung on errors
+            if (!mungError && res.statusCode >= 400) {
+                return original.call(res, body);
+            }
+
             // If response type is not application/json,
             // just call the original res.write function
-            if (res.get('Content-Type') !== 'application/json') {
-                return original.call(res, body)
+            if (!(contentType && ~contentType.indexOf('application/json'))) {
+                return original.call(res, body);
             }
 
             try {
-                const responsePayload = JSON.parse(body)
+                const json = JSON.parse(body);
+                const modifiedJSON = fn(json, req, res);
 
-                fn(body, req, res)
+                if (res.headersSent) {
+                    return;
+                }
 
-                res.set('Content-Length', Buffer.byteLength(JSON.stringify(responsePayload), 'utf8'));
-                return original.apply(res, [ JSON.stringify(responsePayload) ].concat(args.slice(1)))
+                // If null, then 204 No Content
+                if (!modifiedJSON) {
+                    return res.status(204).end();
+                }
 
+                res.set('Content-Length', Buffer.byteLength(JSON.stringify(modifiedJSON), 'utf8'));
+                return original.apply(res, [ JSON.stringify(modifiedJSON), ...args ])
             } catch (err) {
-                return mung.onError(e, req, res);
+                return mung.onError(err, req, res);
             }
         }
 

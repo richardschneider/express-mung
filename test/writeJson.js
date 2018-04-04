@@ -5,7 +5,7 @@ let should = require('should'),
     request = require('supertest'),
     mung = require('../');
 
-describe.only ('mung writeJson', () => {
+describe('mung writeJson', () => {
 
     let originalResponseBody
 
@@ -15,6 +15,7 @@ describe.only ('mung writeJson', () => {
 
     function inspect (json, req, res) {
         json.inspected_by = 'me'
+        return json
     }
 
     function remove (json, req, res) {
@@ -33,7 +34,8 @@ describe.only ('mung writeJson', () => {
         let server = express()
             .use(mung.writeJson(inspect))
             .get('/', (req, res) => {
-                res.status(200)
+                res.set('Content-Type', 'application/json')
+                    .status(200)
                     .write(originalResponseBody);
                 res.end();
             });
@@ -41,10 +43,10 @@ describe.only ('mung writeJson', () => {
             .get('/')
             .expect(200)
             .expect(res => {
-                let expected = JSON.stringify({
+                let expected = {
                     a : 'a',
                     'inspected_by': 'me'
-                });
+                };
                 res.body.should.eql(expected);
                 res.headers['content-length'].should.equal(JSON.stringify(expected).length.toString())
             })
@@ -55,7 +57,8 @@ describe.only ('mung writeJson', () => {
         let server = express()
             .use(mung.writeJson(inspect))
             .get('/', (req, res) => {
-                res.status(404)
+                res.set('Content-Type', 'application/json')
+                    .status(404)
                     .write(originalResponseBody);
                 res.end();
             });
@@ -72,7 +75,8 @@ describe.only ('mung writeJson', () => {
         let server = express()
             .use(mung.writeJson(inspect, { mungError: true }))
             .get('/', (req, res) => {
-                res.status(404)
+                res.set('Content-Type', 'application/json')
+                    .status(404)
                     .write(originalResponseBody);
                 res.end();
             });
@@ -94,7 +98,8 @@ describe.only ('mung writeJson', () => {
         let server = express()
             .use(mung.writeJson(remove))
             .get('/', (req, res) => {
-                res.status(200)
+                res.set('Content-Type', 'application/json')
+                    .status(200)
                     .write(originalResponseBody)
                 res.end();
             });
@@ -104,9 +109,9 @@ describe.only ('mung writeJson', () => {
             .end(done);
     });
 
-    it('should return a munged scalar result as text/plain', done => {
+    it('should not munge a response when the content type is not application/json', done => {
         let server = express()
-            .use(mung.writeJson(reduce))
+            .use(mung.writeJson(inspect))
             .get('/', (req, res) => {
                 res.status(200)
                     .write(originalResponseBody)
@@ -116,30 +121,26 @@ describe.only ('mung writeJson', () => {
             .get('/')
             .expect(200)
             .expect(res => {
-                res.text.should.equal('a');
-                res.headers.should.have.property('content-type', 'text/plain; charset=utf-8');
+                res.text.should.equal(originalResponseBody);
             })
             .end(done);
     });
 
     it('should abort if a response is sent', done => {
         function error (json, req, res) {
-            res.status(403).send('no permissions')
+            res.status(403).json({ foo: 'bar '})
         }
         let server = express()
             .use(mung.writeJson(error))
             .get('/', (req, res) => {
-                res.status(200)
+                res.set('Content-Type', 'application/json')
+                    .status(200)
                     .write(originalResponseBody)
                 res.end()
             });
         request(server)
             .get('/')
             .expect(403)
-            .expect(res => {
-                res.text.should.equal('no permissions');
-                res.headers.should.have.property('content-type', 'text/html; charset=utf-8');
-            })
             .end(done);
     });
 
@@ -148,7 +149,8 @@ describe.only ('mung writeJson', () => {
             .use((err, req, res, next) => res.status(500).send(err.message).end())
             .use(mung.writeJson(error))
             .get('/', (req, res) => {
-                res.status(200)
+                res.set('Content-Type', 'application/json')
+                    .status(200)
                     .write(originalResponseBody);
                 res.end();
             });
@@ -164,7 +166,8 @@ describe.only ('mung writeJson', () => {
             .use(mung.writeJson(error))
             .get('/', (req, res) => {
                 process.nextTick(() => {
-                    res.status(200).write(originalResponseBody);
+                    res.set('Content-Type', 'application/json')
+                        .status(200).write(originalResponseBody);
                     res.end();
                 });
             });
