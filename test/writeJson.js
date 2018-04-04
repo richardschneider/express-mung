@@ -5,7 +5,13 @@ let should = require('should'),
     request = require('supertest'),
     mung = require('../');
 
-describe ('mung writeJson', () => {
+describe.only ('mung writeJson', () => {
+
+    let originalResponseBody
+
+    beforeEach(() => {
+        originalResponseBody = JSON.stringify({ a: 'a' })
+    })
 
     function inspect (json, req, res) {
         json.inspected_by = 'me'
@@ -26,12 +32,16 @@ describe ('mung writeJson', () => {
     it('should return the munged JSON result', done => {
         let server = express()
             .use(mung.writeJson(inspect))
-            .get('/', (req, res) => res.status(200).json({ a: 'a' }).end());
+            .get('/', (req, res) => {
+                res.status(200)
+                    .write(originalResponseBody);
+                res.end();
+            });
         request(server)
             .get('/')
             .expect(200)
             .expect(res => {
-                let expected = {a : 'a', 'inspected_by': 'me'};
+                let expected = JSON.stringify({a : 'a', 'inspected_by': 'me'});
                 res.body.should.eql(expected);
                 res.headers['content-length'].should.equal(JSON.stringify(expected).length.toString())
             })
@@ -41,7 +51,11 @@ describe ('mung writeJson', () => {
     it('should not mung an error response (by default)', done => {
         let server = express()
             .use(mung.writeJson(inspect))
-            .get('/', (req, res) => res.status(404).json({ a: 'a' }).end());
+            .get('/', (req, res) => {
+                res.status(404)
+                    .write(originalResponseBody);
+                res.end();
+            });
         request(server)
             .get('/')
             .expect(404)
@@ -54,7 +68,11 @@ describe ('mung writeJson', () => {
     it('should mung an error response when told to', done => {
         let server = express()
             .use(mung.writeJson(inspect, { mungError: true }))
-            .get('/', (req, res) => res.status(404).json({ a: 'a' }).end());
+            .get('/', (req, res) => {
+                res.status(404)
+                    .write(originalResponseBody);
+                res.end();
+            });
         request(server)
             .get('/')
             .expect(404)
@@ -69,32 +87,25 @@ describe ('mung writeJson', () => {
     it('should return 204 on null JSON result', done => {
         let server = express()
             .use(mung.writeJson(remove))
-            .get('/', (req, res) => res.status(200).json({ a: 'a' }));
+            .get('/', (req, res) => {
+                res.status(200)
+                    .write(originalResponseBody)
+                res.end();
+            });
         request(server)
             .get('/')
             .expect(204)
             .end(done);
     });
 
-    it('should return the munged JSON result from a res.send', done => {
-        let server = express()
-            .use(mung.writeJson(inspect))
-            .get('/', (req, res) => res.status(200).send({ a: 'a' }).end());
-        request(server)
-            .get('/')
-            .expect(200)
-            .expect(res => {
-                let expected = {a : 'a', 'inspected_by': 'me'};
-                res.body.should.eql(expected);
-                res.headers['content-length'].should.equal(JSON.stringify(expected).length.toString())
-            })
-            .end(done);
-    });
-
     it('should return a munged scalar result as text/plain', done => {
         let server = express()
             .use(mung.writeJson(reduce))
-            .get('/', (req, res) => res.status(200).json({ a: 'a' }).end());
+            .get('/', (req, res) => {
+                res.status(200)
+                    .write(originalResponseBody)
+                res.end();
+            });
         request(server)
             .get('/')
             .expect(200)
@@ -111,7 +122,11 @@ describe ('mung writeJson', () => {
         }
         let server = express()
             .use(mung.writeJson(error))
-            .get('/', (req, res) => res.status(200).json({ a: 'a' }).end());
+            .get('/', (req, res) => {
+                res.status(200)
+                    .write(originalResponseBody)
+                res.end()
+            });
         request(server)
             .get('/')
             .expect(403)
@@ -126,7 +141,11 @@ describe ('mung writeJson', () => {
         let server = express()
             .use((err, req, res, next) => res.status(500).send(err.message).end())
             .use(mung.writeJson(error))
-            .get('/', (req, res) => res.status(200).json({ a: 'a' }).end());
+            .get('/', (req, res) => {
+                res.status(200)
+                    .write(originalResponseBody);
+                res.end();
+            });
         request(server)
             .get('/')
             .expect(500)
@@ -139,7 +158,8 @@ describe ('mung writeJson', () => {
             .use(mung.writeJson(error))
             .get('/', (req, res) => {
                 process.nextTick(() => {
-                    res.status(200).json({ a: 'a' }).end();
+                    res.status(200).write(originalResponseBody);
+                    res.end();
                 });
             });
         request(server)
