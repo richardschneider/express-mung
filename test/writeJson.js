@@ -41,7 +41,10 @@ describe.only ('mung writeJson', () => {
             .get('/')
             .expect(200)
             .expect(res => {
-                let expected = JSON.stringify({a : 'a', 'inspected_by': 'me'});
+                let expected = JSON.stringify({
+                    a : 'a',
+                    'inspected_by': 'me'
+                });
                 res.body.should.eql(expected);
                 res.headers['content-length'].should.equal(JSON.stringify(expected).length.toString())
             })
@@ -77,7 +80,10 @@ describe.only ('mung writeJson', () => {
             .get('/')
             .expect(404)
             .expect(res => {
-                let expected = {a : 'a', 'inspected_by': 'me'};
+                let expected = {
+                    a : 'a',
+                    'inspected_by': 'me'
+                };
                 res.body.should.eql(expected);
                 res.headers['content-length'].should.equal(JSON.stringify(expected).length.toString())
             })

@@ -159,46 +159,30 @@ mung.headersAsync = function headersAsync (fn) {
     }
 }
 
-mung.writeJson = function writeJson (fn, options) {
+mung.writeJson = function writeJson (fn, options = {}) {
     return function (req, res, next) {
-        let original = res.json;
-        options = options || {};
-        let mungError = options.mungError;
+        const original = res.write;
+        const mungError = options.mungError;
 
-        function json_hook (json) {
-            let originalJson = json;
-            res.json = original;
-            if (res.headersSent)
-                return res;
-            if (!mungError && res.statusCode >= 400)
-                return original.call(this, json);
+        res.write = (body, ...args) => {
+            // If response type is not application/json,
+            // just call the original res.write function
+            if (res.get('Content-Type') !== 'application/json') {
+                return original.call(res, body)
+            }
 
-            // Run the munger
             try {
-                json = fn(json, req, res);
-            } catch (e) {
+                const responsePayload = JSON.parse(body)
+
+                fn(body, req, res)
+
+                res.set('Content-Length', Buffer.byteLength(JSON.stringify(responsePayload), 'utf8'));
+                return original.apply(res, [ JSON.stringify(responsePayload) ].concat(args.slice(1)))
+
+            } catch (err) {
                 return mung.onError(e, req, res);
             }
-            if (res.headersSent)
-                return res;
-
-            // If no returned value from fn, then assume json has been mucked with.
-            if (json === undefined)
-                json = originalJson;
-
-            // If null, then 204 No Content
-            if (json === null)
-                return res.status(204).end();
-
-            // If scalar value, then text/plain
-            if (isScalar(json)) {
-                res.set('content-type', 'text/plain');
-                return res.send(json);
-            }
-
-            return original.call(this, json);
         }
-        res.json = json_hook;
 
         next && next();
     }
