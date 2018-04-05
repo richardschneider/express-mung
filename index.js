@@ -164,7 +164,7 @@ mung.writeJson = function writeJson (fn, options = {}) {
         const original = res.write;
         const mungError = options.mungError;
 
-        res.write = (body, ...args) => {
+        res.write = function (body, ...args) {
             const contentType = res.get('Content-Type');
 
             if (res.headersSent) {
@@ -173,30 +173,35 @@ mung.writeJson = function writeJson (fn, options = {}) {
 
             // Do not mung on errors
             if (!mungError && res.statusCode >= 400) {
-                return original.call(res, body);
+                return original.apply(res, arguments);
             }
 
             // If response type is not application/json,
             // just call the original res.write function
             if (!(contentType && ~contentType.indexOf('application/json'))) {
-                return original.call(res, body);
+                return original.apply(res, arguments);
             }
 
             try {
-                const json = JSON.parse(body);
-                const modifiedJSON = fn(json, req, res);
+                const originalJson = JSON.parse(body);
+                let json = fn(originalJson, req, res);
 
                 if (res.headersSent) {
                     return;
                 }
 
+                // If no returned value from fn, then assume json has been mucked with.
+                if (json === undefined) {
+                    json = originalJson;
+                }
+
                 // If null, then 204 No Content
-                if (!modifiedJSON) {
+                if (json === null) {
                     return res.status(204).end();
                 }
 
-                res.set('Content-Length', Buffer.byteLength(JSON.stringify(modifiedJSON), 'utf8'));
-                return original.apply(res, [ JSON.stringify(modifiedJSON), ...args ])
+                res.set('Content-Length', Buffer.byteLength(JSON.stringify(json), options.encoding));
+                return original.apply(res, [ JSON.stringify(json), ...args ])
             } catch (err) {
                 return mung.onError(err, req, res);
             }

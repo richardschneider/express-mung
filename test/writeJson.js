@@ -15,7 +15,6 @@ describe('mung writeJson', () => {
 
     function inspect (json, req, res) {
         json.inspected_by = 'me'
-        return json
     }
 
     function remove (json, req, res) {
@@ -32,7 +31,7 @@ describe('mung writeJson', () => {
 
     it('should return the munged JSON result', done => {
         let server = express()
-            .use(mung.writeJson(inspect))
+            .use(mung.writeJson(inspect, { encoding: 'utf-8' }))
             .get('/', (req, res) => {
                 res.set('Content-Type', 'application/json')
                     .status(200)
@@ -55,7 +54,7 @@ describe('mung writeJson', () => {
 
     it('should not mung an error response (by default)', done => {
         let server = express()
-            .use(mung.writeJson(inspect))
+            .use(mung.writeJson(inspect, { encoding: 'utf-8' }))
             .get('/', (req, res) => {
                 res.set('Content-Type', 'application/json')
                     .status(404)
@@ -73,7 +72,7 @@ describe('mung writeJson', () => {
 
     it('should mung an error response when told to', done => {
         let server = express()
-            .use(mung.writeJson(inspect, { mungError: true }))
+            .use(mung.writeJson(inspect, { mungError: true }, { encoding: 'utf-8' }))
             .get('/', (req, res) => {
                 res.set('Content-Type', 'application/json')
                     .status(404)
@@ -96,7 +95,7 @@ describe('mung writeJson', () => {
 
     it('should return 204 on null JSON result', done => {
         let server = express()
-            .use(mung.writeJson(remove))
+            .use(mung.writeJson(remove, { encoding: 'utf-8' }))
             .get('/', (req, res) => {
                 res.set('Content-Type', 'application/json')
                     .status(200)
@@ -111,7 +110,7 @@ describe('mung writeJson', () => {
 
     it('should not munge a response when the content type is not application/json', done => {
         let server = express()
-            .use(mung.writeJson(inspect))
+            .use(mung.writeJson(inspect, { encoding: 'utf-8' }))
             .get('/', (req, res) => {
                 res.status(200)
                     .write(originalResponseBody)
@@ -131,7 +130,7 @@ describe('mung writeJson', () => {
             res.status(403).json({ foo: 'bar '})
         }
         let server = express()
-            .use(mung.writeJson(error))
+            .use(mung.writeJson(error, { encoding: 'utf-8' }))
             .get('/', (req, res) => {
                 res.set('Content-Type', 'application/json')
                     .status(200)
@@ -147,7 +146,7 @@ describe('mung writeJson', () => {
     it('should 500 on a synchronous exception', done => {
         let server = express()
             .use((err, req, res, next) => res.status(500).send(err.message).end())
-            .use(mung.writeJson(error))
+            .use(mung.writeJson(error, { encoding: 'utf-8' }))
             .get('/', (req, res) => {
                 res.set('Content-Type', 'application/json')
                     .status(200)
@@ -163,7 +162,7 @@ describe('mung writeJson', () => {
     it('should 500 on an asynchronous exception', done => {
         let server = express()
             .use((err, req, res, next) => res.status(500).send(err.message).end())
-            .use(mung.writeJson(error))
+            .use(mung.writeJson(error, { encoding: 'utf-8' }))
             .get('/', (req, res) => {
                 process.nextTick(() => {
                     res.set('Content-Type', 'application/json')
