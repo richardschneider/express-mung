@@ -159,14 +159,12 @@ mung.headersAsync = function headersAsync (fn) {
     }
 }
 
-mung.writeJson = function writeJson (fn, options = {}) {
+mung.write = function write (fn, options = {}) {
     return function (req, res, next) {
         const original = res.write;
         const mungError = options.mungError;
 
-        res.write = function (body, ...args) {
-            const contentType = res.get('Content-Type');
-
+        res.write = function (chunk, encoding, ...args) {
             if (res.headersSent) {
                 return;
             }
@@ -176,32 +174,26 @@ mung.writeJson = function writeJson (fn, options = {}) {
                 return original.apply(res, arguments);
             }
 
-            // If response type is not application/json,
-            // just call the original res.write function
-            if (!(contentType && ~contentType.indexOf('application/json'))) {
-                return original.apply(res, arguments);
-            }
-
             try {
-                const originalJson = JSON.parse(body);
-                let json = fn(originalJson, req, res);
+                let modifiedChunk = fn(chunk, req, res);
 
                 if (res.headersSent) {
                     return;
                 }
 
-                // If no returned value from fn, then assume json has been mucked with.
-                if (json === undefined) {
-                    json = originalJson;
+                // If no returned value from fn, then set it back to the original value
+                if (modifiedChunk === undefined) {
+                    modifiedChunk = chunk;
                 }
 
                 // If null, then 204 No Content
-                if (json === null) {
+                if (modifiedChunk === null) {
                     return res.status(204).end();
                 }
-
-                res.set('Content-Length', Buffer.byteLength(JSON.stringify(json), options.encoding));
-                return original.apply(res, [ JSON.stringify(json), ...args ])
+                // Default to utf-8 as per the spec defined in the node.js docs.
+                // The encoding value can be overridden
+                res.set('Content-Length', Buffer.byteLength(modifiedChunk, encoding || options.encoding || 'utf8'));
+                return original.apply(res, [ modifiedChunk, [].slice.call(arguments, 1) ])
             } catch (err) {
                 return mung.onError(err, req, res);
             }
