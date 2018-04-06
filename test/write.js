@@ -19,11 +19,11 @@ describe('mung write', () => {
         }
     })
 
-    function appendText (chunk, req, res) {
+    function appendText (chunk, encoding, req, res) {
         return (chunk + ' with more content')
     }
 
-    function inspectJson (chunk, req, res) {
+    function inspectJson (chunk, encoding, req, res) {
         try {
             const json = JSON.parse(chunk)
             json.inspected_by = 'me'
@@ -34,12 +34,16 @@ describe('mung write', () => {
         }
     }
 
-    function remove (chunk, req, res) {
+    function remove (chunk, encoding, req, res) {
         return null;
     }
 
-    function error (chunk, req, res) {
+    function error (chunk, encoding, req, res) {
         chunk.foo.bar.hopefully.fails();
+    }
+
+    function error403 (chunk, encoding, req, res) {
+        res.status(403).json({ foo: 'bar '})
     }
 
     it('should return the munged text result', done => {
@@ -55,7 +59,6 @@ describe('mung write', () => {
             .expect(200)
             .expect(res => {
                 res.text.should.eql(modifiedResponseTextBody);
-                res.headers['content-length'].should.equal(modifiedResponseTextBody.length.toString())
             })
             .end(done);
     });
@@ -76,7 +79,6 @@ describe('mung write', () => {
                 const expectedJSON = { a: 'a', inspected_by: 'me' };
                 const expectedStringified = JSON.stringify(expectedJSON);
                 res.body.should.eql(expectedJSON);
-                res.headers['content-length'].should.equal(JSON.stringify(expectedJSON).length.toString())
             })
             .end(done);
     });
@@ -112,7 +114,6 @@ describe('mung write', () => {
             .expect(404)
             .expect(res => {
                 res.text.should.eql(modifiedResponseTextBody);
-                res.headers['content-length'].should.equal(modifiedResponseTextBody.length.toString())
             })
             .end(done);
     });
@@ -133,11 +134,8 @@ describe('mung write', () => {
     });
 
     it('should abort if a response is sent', done => {
-        function error (json, req, res) {
-            res.status(403).json({ foo: 'bar '})
-        }
         const server = express()
-            .use(mung.write(error))
+            .use(mung.write(error403))
             .get('/', (req, res) => {
                 res.set('Content-Type', 'application/json')
                     .status(200)

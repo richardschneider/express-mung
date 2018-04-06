@@ -164,7 +164,7 @@ mung.write = function write (fn, options = {}) {
         const original = res.write;
         const mungError = options.mungError;
 
-        res.write = function (chunk, encoding, ...args) {
+        res.write = function (chunk, encoding, callback) {
             if (res.headersSent) {
                 return;
             }
@@ -175,7 +175,14 @@ mung.write = function write (fn, options = {}) {
             }
 
             try {
-                let modifiedChunk = fn(chunk, req, res);
+                let modifiedChunk = fn(
+                    chunk,
+                    // Since `encoding` is an optional argument to `res.write`,
+                    // make sure it is a string and not actually the callback.
+                    typeof encoding === 'string' ? encoding : null,
+                    req,
+                    res
+                );
 
                 if (res.headersSent) {
                     return;
@@ -191,10 +198,7 @@ mung.write = function write (fn, options = {}) {
                     return res.status(204).end();
                 }
 
-                // Encoding defaults to utf-8 as per the spec defined in the node.js docs.
-                // The encoding value can be overridden
-                res.set('Content-Length', Buffer.byteLength(modifiedChunk, encoding));
-                return original.apply(res, [ modifiedChunk, [].slice.call(arguments, 1) ])
+                return original.call(res, modifiedChunk, encoding, callback)
             } catch (err) {
                 return mung.onError(err, req, res);
             }
