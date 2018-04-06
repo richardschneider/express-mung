@@ -69,7 +69,7 @@ Asynchronously transform the HTTP headers of the response.
 
 ### mung.write(fn, [options])
 
-`fn(chunk, req, res)` receives the string or buffer as `chunk`, along with `req` and `res`. It returns the modified body. If `undefined` is returned (i.e. nothing) then the original unmodified chunk is used.  If `null` is returned, then a 204 No Content HTTP status is returned to client.
+`fn(chunk, encoding, req, res)` receives the string or buffer as `chunk`, its `encoding` if applicable (`null` otherwise), `req` and `res`. It returns the modified body. If `undefined` is returned (i.e. nothing) then the original unmodified chunk is used.  If `null` is returned, then a 204 No Content HTTP status is returned to client.
 
 ### Notes
 
