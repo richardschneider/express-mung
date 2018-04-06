@@ -5,7 +5,7 @@ let should = require('should'),
     request = require('supertest'),
     mung = require('../');
 
-describe('mung writeJson', () => {
+describe('mung write', () => {
 
     let originalResponseTextBody
     let originalResponseJSONBody

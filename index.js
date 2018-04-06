@@ -190,9 +190,10 @@ mung.write = function write (fn, options = {}) {
                 if (modifiedChunk === null) {
                     return res.status(204).end();
                 }
-                // Default to utf-8 as per the spec defined in the node.js docs.
+
+                // Encoding defaults to utf-8 as per the spec defined in the node.js docs.
                 // The encoding value can be overridden
-                res.set('Content-Length', Buffer.byteLength(modifiedChunk, encoding || options.encoding || 'utf8'));
+                res.set('Content-Length', Buffer.byteLength(modifiedChunk, encoding));
                 return original.apply(res, [ modifiedChunk, [].slice.call(arguments, 1) ])
             } catch (err) {
                 return mung.onError(err, req, res);
