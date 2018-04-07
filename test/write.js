@@ -118,21 +118,6 @@ describe('mung write', () => {
             .end(done);
     });
 
-    it('should return 204 on null JSON result', done => {
-        const server = express()
-            .use(mung.write(remove))
-            .get('/', (req, res) => {
-                res.set('Content-Type', 'application/json')
-                    .status(200)
-                    .write(originalResponseTextBody)
-                res.end();
-            });
-        request(server)
-            .get('/')
-            .expect(204)
-            .end(done);
-    });
-
     it('should abort if a response is sent', done => {
         const server = express()
             .use(mung.write(error403))

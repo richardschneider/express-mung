@@ -164,9 +164,10 @@ mung.write = function write (fn, options = {}) {
         const original = res.write;
         const mungError = options.mungError;
 
-        res.write = function (chunk, encoding, callback) {
-            if (res.headersSent) {
-                return;
+        function write_hook (chunk, encoding, callback) {
+            // If res.end has already been called, do nothing.
+            if (res.finished) {
+                return false;
             }
 
             // Do not mung on errors
@@ -175,6 +176,7 @@ mung.write = function write (fn, options = {}) {
             }
 
             try {
+
                 let modifiedChunk = fn(
                     chunk,
                     // Since `encoding` is an optional argument to `res.write`,
@@ -184,8 +186,10 @@ mung.write = function write (fn, options = {}) {
                     res
                 );
 
-                if (res.headersSent) {
-                    return;
+                // res.finished is set to `true` once res.end has been called.
+                // If it is called in the mung function, stop execution here.
+                if (res.finished) {
+                    return false;
                 }
 
                 // If no returned value from fn, then set it back to the original value
@@ -193,16 +197,14 @@ mung.write = function write (fn, options = {}) {
                     modifiedChunk = chunk;
                 }
 
-                // If null, then 204 No Content
-                if (modifiedChunk === null) {
-                    return res.status(204).end();
-                }
-
                 return original.call(res, modifiedChunk, encoding, callback)
+
             } catch (err) {
                 return mung.onError(err, req, res);
             }
         }
+
+        res.write = write_hook;
 
         next && next();
     }
