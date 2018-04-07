@@ -159,4 +159,55 @@ mung.headersAsync = function headersAsync (fn) {
     }
 }
 
+mung.write = function write (fn, options = {}) {
+    return function (req, res, next) {
+        const original = res.write;
+        const mungError = options.mungError;
+
+        function write_hook (chunk, encoding, callback) {
+            // If res.end has already been called, do nothing.
+            if (res.finished) {
+                return false;
+            }
+
+            // Do not mung on errors
+            if (!mungError && res.statusCode >= 400) {
+                return original.apply(res, arguments);
+            }
+
+            try {
+
+                let modifiedChunk = fn(
+                    chunk,
+                    // Since `encoding` is an optional argument to `res.write`,
+                    // make sure it is a string and not actually the callback.
+                    typeof encoding === 'string' ? encoding : null,
+                    req,
+                    res
+                );
+
+                // res.finished is set to `true` once res.end has been called.
+                // If it is called in the mung function, stop execution here.
+                if (res.finished) {
+                    return false;
+                }
+
+                // If no returned value from fn, then set it back to the original value
+                if (modifiedChunk === undefined) {
+                    modifiedChunk = chunk;
+                }
+
+                return original.call(res, modifiedChunk, encoding, callback)
+
+            } catch (err) {
+                return mung.onError(err, req, res);
+            }
+        }
+
+        res.write = write_hook;
+
+        next && next();
+    }
+}
+
 module.exports = mung;
