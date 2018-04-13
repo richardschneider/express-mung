@@ -2,7 +2,7 @@
 
 Middleware for express responses.
 
-This package allows synchronous and asynchronous transformation of an express response.  This is a similar concept to the express middleware for a request but for a response.  Note that the middleware is executed in LIFO order.  It is implemented by monkey patching (hooking) the `res.end` or `res.json` methods.
+This package allows synchronous and asynchronous transformation of an express response.  This is a similar concept to the express middleware for a request but for a response.  Note that the middleware is executed in LIFO order.  It is implemented by monkey patching (hooking) the `res.end`, `res.json`, or `res.write` methods.
 
 
 ## Getting started [![npm version](https://badge.fury.io/js/express-mung.svg)](https://badge.fury.io/js/express-mung)
@@ -78,6 +78,10 @@ Asynchronously transform the HTTP headers of the response.
 * when `mung.json*` detects that a response has been sent, it will abort.
 
 * sending a response while in `mung.headers*` is **undefined behaviour** and will most likely result in an error.
+
+* when `mung.write` detects that a response has completed (i.e. if `res.end` has been called), it will abort.
+
+* calling `res.json` or `res.send` from `mung.write` can lead to unexpected behavior since they end the response internally.
 
 ### options
 
