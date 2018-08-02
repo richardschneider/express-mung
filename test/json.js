@@ -21,6 +21,10 @@ describe ('mung json', () => {
     function reduce (json, req, res) {
         return json.a;
     }
+  
+    function life (json, req, res) {
+        return 42;
+    }
 
     function error(json, req, res) {
         json.foo.bar.hopefully.fails();
@@ -108,10 +112,10 @@ describe ('mung json', () => {
             .end(done);
     });
 
-    it('should return a number as text/plain', done => {
+    it('should return a munged number as text/plain', done => {
         let server = express()
-            .use(mung.json(noop))
-            .get('/', (req, res) => res.status(200).json(42).end());
+            .use(mung.json(life))
+            .get('/', (req, res) => res.status(200).json("the meaning of life").end());
         request(server)
             .get('/')
             .expect(200)
@@ -122,7 +126,21 @@ describe ('mung json', () => {
             .end(done);
     });
 
-  it('should abort if a response is sent', done => {
+    it('should return a number as application/json', done => {
+        let server = express()
+            .use(mung.json(noop))
+            .get('/', (req, res) => res.status(200).json(42).end());
+        request(server)
+            .get('/')
+            .expect(200)
+            .expect(res => {
+                res.text.should.equal('42');
+                res.headers.should.have.property('content-type', 'application/json; charset=utf-8');
+            })
+            .end(done);
+    });
+
+    it('should abort if a response is sent', done => {
         function error (json, req, res) {
             res.status(403).send('no permissions')
         }

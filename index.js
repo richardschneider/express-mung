@@ -47,8 +47,8 @@ mung.json = function json (fn, options) {
             if (json === null)
                 return res.status(204).end();
 
-            // If scalar value, then text/plain
-            if (isScalar(json)) {
+            // If munged scalar value, then text/plain
+            if (originalJson !== json && isScalar(json)) {
                 res.set('content-type', 'text/plain');
                 return res.send(String(json));
             }
@@ -68,6 +68,7 @@ mung.jsonAsync = function json (fn, options) {
         let mungError = options.mungError;
 
         function json_async_hook (json) {
+            let originalJson = json;
             res.json = original;
             if (res.headersSent)
                 return;
@@ -83,8 +84,8 @@ mung.jsonAsync = function json (fn, options) {
                     if (json === null)
                         return res.status(204).end();
 
-                    // If scalar value, then text/plain
-                    if (isScalar(json)) {
+                    // If munged scalar value, then text/plain
+                    if (json !== originalJson && isScalar(json)) {
                         res.set('content-type', 'text/plain');
                         return res.send(String(json));
                     }
