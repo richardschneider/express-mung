@@ -50,7 +50,7 @@ mung.json = function json (fn, options) {
             // If scalar value, then text/plain
             if (isScalar(json)) {
                 res.set('content-type', 'text/plain');
-                return res.send(json);
+                return res.send(String(json));
             }
 
             return original.call(this, json);
@@ -86,7 +86,7 @@ mung.jsonAsync = function json (fn, options) {
                     // If scalar value, then text/plain
                     if (isScalar(json)) {
                         res.set('content-type', 'text/plain');
-                        return res.send(json);
+                        return res.send(String(json));
                     }
 
                     return original.call(this, json);

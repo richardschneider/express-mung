@@ -7,6 +7,9 @@ let should = require('should'),
 
 describe ('mung json', () => {
 
+    function noop (json, req, res) {
+    }
+  
     function inspect (json, req, res) {
         json.inspected_by = 'me'
     }
@@ -105,7 +108,21 @@ describe ('mung json', () => {
             .end(done);
     });
 
-    it('should abort if a response is sent', done => {
+    it('should return a number as text/plain', done => {
+        let server = express()
+            .use(mung.json(noop))
+            .get('/', (req, res) => res.status(200).json(42).end());
+        request(server)
+            .get('/')
+            .expect(200)
+            .expect(res => {
+                res.text.should.equal('42');
+                res.headers.should.have.property('content-type', 'text/plain; charset=utf-8');
+            })
+            .end(done);
+    });
+
+  it('should abort if a response is sent', done => {
         function error (json, req, res) {
             res.status(403).send('no permissions')
         }

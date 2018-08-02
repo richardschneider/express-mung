@@ -8,6 +8,10 @@ let should = require('should'),
 
 describe ('mung jsonAsync', () => {
 
+    function noop (json, req, res) {
+        return Promise.resolve(json);
+    }
+
     function inspect (json, req, res) {
         return Promise.resolve(json)
             .then(json => {
@@ -93,6 +97,20 @@ describe ('mung jsonAsync', () => {
             .expect(200)
             .expect(res => {
                 res.text.should.equal('alpha');
+                res.headers.should.have.property('content-type', 'text/plain; charset=utf-8');
+            })
+            .end(done);
+    });
+
+    it('should return a number as text/plain', done => {
+        let server = express()
+            .use(mung.jsonAsync(noop))
+            .get('/', (req, res) => res.status(200).json(42).end());
+        request(server)
+            .get('/')
+            .expect(200)
+            .expect(res => {
+                res.text.should.equal('42');
                 res.headers.should.have.property('content-type', 'text/plain; charset=utf-8');
             })
             .end(done);
