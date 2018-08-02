@@ -8,6 +8,10 @@ let should = require('should'),
 
 describe ('mung jsonAsync', () => {
 
+    function noop (json, req, res) {
+        return Promise.resolve(json);
+    }
+
     function inspect (json, req, res) {
         return Promise.resolve(json)
             .then(json => {
@@ -24,6 +28,11 @@ describe ('mung jsonAsync', () => {
     function reduce (json, req, res) {
         return Promise.resolve(json)
             .then(json => json.a);
+    }
+
+    function life (json, req, res) {
+        return Promise.resolve(json)
+            .then(json => 42);
     }
 
     function error(json, req, res) {
@@ -94,6 +103,34 @@ describe ('mung jsonAsync', () => {
             .expect(res => {
                 res.text.should.equal('alpha');
                 res.headers.should.have.property('content-type', 'text/plain; charset=utf-8');
+            })
+            .end(done);
+    });
+
+    it('should return a munged number as text/plain', done => {
+        let server = express()
+            .use(mung.jsonAsync(life))
+            .get('/', (req, res) => res.status(200).json("the meaning of life").end());
+        request(server)
+            .get('/')
+            .expect(200)
+            .expect(res => {
+                res.text.should.equal('42');
+                res.headers.should.have.property('content-type', 'text/plain; charset=utf-8');
+            })
+            .end(done);
+    });
+
+    it('should return a number as application/json', done => {
+        let server = express()
+            .use(mung.jsonAsync(noop))
+            .get('/', (req, res) => res.status(200).json(42).end());
+        request(server)
+            .get('/')
+            .expect(200)
+            .expect(res => {
+                res.text.should.equal('42');
+                res.headers.should.have.property('content-type', 'application/json; charset=utf-8');
             })
             .end(done);
     });
