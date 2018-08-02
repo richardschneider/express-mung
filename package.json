@@ -19,8 +19,8 @@
   ],
   "author": "Richard Schneider <makaretu@gmail.com>",
   "contributors": [
-      "Ido Schachter <ido.schachter@ironsrc.com>",
-      "Sachin Hegde <sachin.hegde91@gmail.com>"
+    "Ido Schachter <ido.schachter@ironsrc.com>",
+    "Sachin Hegde <sachin.hegde91@gmail.com>"
   ],
   "license": "MIT",
   "bugs": {
@@ -28,12 +28,11 @@
   },
   "homepage": "https://github.com/richardschneider/express-mung#readme",
   "devDependencies": {
-    "bluebird": "^3.0.5",
-    "express": "^4.13.3",
-    "mocha": "^5.1.0",
-    "should": "^13.2.2",
-    "supertest": "^3.0.0"
+    "bluebird": "^3.5.1",
+    "express": "^4.16.3",
+    "mocha": "^5.2.0",
+    "should": "^13.2.3",
+    "supertest": "^3.1.0"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }
