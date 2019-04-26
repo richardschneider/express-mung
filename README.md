@@ -30,7 +30,7 @@ function redact(body, req, res) {
     return body;
 }
 
-exports = mung.json(redact);
+module.exports = mung.json(redact);
 ````
 
 then add to your `app.js` file (before the route handling middleware)
