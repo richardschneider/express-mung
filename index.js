@@ -7,7 +7,7 @@ function isScalar(v) {
     return typeof v !== 'object' && !Array.isArray(v);
 }
 
-mung.onError = (err, req, res) => {
+mung.onError = (err, req, res, next) => {
     res
         .status(500)
         .set('content-language', 'en')
@@ -34,7 +34,7 @@ mung.json = function json (fn, options) {
             try {
                 json = fn(json, req, res);
             } catch (e) {
-                return mung.onError(e, req, res);
+                return mung.onError(e, req, res, next);
             }
             if (res.headersSent)
                 return res;
@@ -92,9 +92,9 @@ mung.jsonAsync = function json (fn, options) {
 
                     return original.call(this, json);
                 })
-                .catch(e => mung.onError(e, req, res));
+                .catch(e => mung.onError(e, req, res, next));
             } catch (e) {
-                mung.onError(e, req, res);
+                mung.onError(e, req, res, next);
             }
 
             return faux_fin;
@@ -114,7 +114,7 @@ mung.headers = function headers (fn) {
                 try {
                     fn(req, res);
                 } catch (e) {
-                    return mung.onError(e, req, res);
+                    return mung.onError(e, req, res, next);
                 }
                 if (res.headersSent) {
                     console.error('sending response while in mung.headers is undefined behaviour');
@@ -134,7 +134,7 @@ mung.headersAsync = function headersAsync (fn) {
         let original = res.end;
         let onError = e => {
             res.end = original;
-            return mung.onError(e, req, res);
+            return mung.onError(e, req, res, next);
         };
         function headers_async_hook () {
             if (res.headersSent)
@@ -149,9 +149,9 @@ mung.headersAsync = function headersAsync (fn) {
                         return;
                     original.apply(this, args);
                 })
-                .catch(e => onError(e, req, res));
+                .catch(e => onError(e, req, res, next));
             } catch (e) {
-                onError(e, req, res);
+                onError(e, req, res, next);
             }
         }
         res.end = headers_async_hook;
@@ -201,7 +201,7 @@ mung.write = function write (fn, options = {}) {
                 return original.call(res, modifiedChunk, encoding, callback)
 
             } catch (err) {
-                return mung.onError(err, req, res);
+                return mung.onError(err, req, res, next);
             }
         }
 
