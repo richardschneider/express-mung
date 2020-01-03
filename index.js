@@ -211,4 +211,75 @@ mung.write = function write (fn, options = {}) {
     }
 }
 
+mung.send = function (fn, options = {}) {
+    return function (req, res, next) {
+        const originalSend = res.send;
+
+        res.send = function (data) {
+            //  if the resp has completed,  do nothing
+            if (res.finished) {
+                return originalSend.call(res, data);
+            }
+
+            // Do not mung on errors
+            if (!options.mungError && res.statusCode >= 400) {
+                return originalSend.call(res, data);
+            }
+
+            let modified = fn(data, req, res)
+
+            // // If no returned value from fn, then set it back to the original value
+            if (modified === undefined) {
+                modified = data;
+            }
+
+            originalSend.call(res, modified);
+            res.send = originalSend;
+            return res;
+        }
+
+        next && next();
+    }
+}
+
+mung.sendAsync = function (fn) {
+    return function (req, res, next) {
+        const originalSend = res.send;
+        const originalEnd = res.end;
+
+        //  when end() is called not in 'asyncHook', do it actually
+        res.__inHook = false;
+        res.end = () => {
+            res.__isEnd = true;
+            if (!res.__inHook) {
+                res.end = originalEnd;
+                return res.end();
+            }
+        };
+        res.send = function (data) {
+            if (res.headersSent) {
+                res.end = originalEnd;
+                res.send = originalSend;
+                return originalSend.call(res, data);
+            }
+            res.__inHook = true;
+            fn(data, req, res).then(newData => {
+                if (res.headersSent) {
+                    return;
+                }
+                res.send = originalSend;
+                res.end = originalEnd;
+                originalSend.call(res, newData);
+                if (res.__isEnd) {
+                    res.end();
+                }
+                res.__inHook = false;
+                return;
+            });
+            return res;
+        }
+        next && next();
+    }
+}
+
 module.exports = mung;
