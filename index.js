@@ -216,9 +216,21 @@ mung.send = function (fn, options = {}) {
         const originalSend = res.send;
 
         res.send = function (data) {
-            //  if the resp has completed,  do nothing
+            res.send = originalSend;
+            let modified;
+            try {
+                modified = fn(data, req, res);
+            } catch (err) {
+                return mung.onError(err, req, res, next);
+            }
+            // If no returned value from fn, then set it back to the original value
+            if (modified === undefined) {
+                modified = data;
+            }
+
+            // If the resp has completed,  do nothing
             if (res.finished) {
-                return originalSend.call(res, data);
+                return res;
             }
 
             // Do not mung on errors
@@ -226,16 +238,7 @@ mung.send = function (fn, options = {}) {
                 return originalSend.call(res, data);
             }
 
-            let modified = fn(data, req, res)
-
-            // // If no returned value from fn, then set it back to the original value
-            if (modified === undefined) {
-                modified = data;
-            }
-
-            originalSend.call(res, modified);
-            res.send = originalSend;
-            return res;
+            return originalSend.call(res, modified);
         }
 
         next && next();
