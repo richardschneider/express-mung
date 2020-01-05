@@ -245,14 +245,15 @@ mung.send = function (fn, options = {}) {
     }
 }
 
-mung.sendAsync = function (fn) {
+mung.sendAsync = function (fn, options = {}) {
     return function (req, res, next) {
         const originalSend = res.send;
         const originalEnd = res.end;
 
-        //  when end() is called not in 'asyncHook', do it actually
+        //  if end() is called outside async hook, do it actually
         res.__inHook = false;
-        res.end = () => {
+        res.__isEnd = false;
+        res.end = function () {
             res.__isEnd = true;
             if (!res.__inHook) {
                 res.end = originalEnd;
@@ -260,25 +261,38 @@ mung.sendAsync = function (fn) {
             }
         };
         res.send = function (data) {
-            if (res.headersSent) {
-                res.end = originalEnd;
-                res.send = originalSend;
-                return originalSend.call(res, data);
+            res.end = originalEnd;
+            res.send = originalSend;
+
+            if (res.finished) {
+                return res;
             }
+
+            //  during async hook processing
             res.__inHook = true;
-            fn(data, req, res).then(newData => {
-                if (res.headersSent) {
+            try {
+                fn(data, req, res).then(modified => {
+                    if (res.finished) {
+                        return;
+                    }
+                    // Do not mung on errors
+                    if (!options.mungError && res.statusCode >= 400) {
+                        originalSend.call(res, data);
+                        return;
+                    }
+                    originalSend.call(res, modified);
+
+                    if (res.__isEnd) {
+                        res.end();
+                    }
+                    res.__inHook = false;
                     return;
-                }
-                res.send = originalSend;
-                res.end = originalEnd;
-                originalSend.call(res, newData);
-                if (res.__isEnd) {
-                    res.end();
-                }
-                res.__inHook = false;
-                return;
-            });
+                }).catch(err => {
+                    mung.onError(err, req, res, next)
+                });
+            } catch (err) {
+                mung.onError(err, req, res, next)
+            }
             return res;
         }
         next && next();

@@ -5,7 +5,7 @@ let should = require('should'),
     request = require('supertest'),
     mung = require('..');
 
-describe('mung send', () => {
+describe('mung sendAsync', () => {
 
     let originalResponseTextBody
     let modifiedResponseTextBody
@@ -25,25 +25,27 @@ describe('mung send', () => {
     })
 
     function modifyText (data, req, res) {
-        return (data + ' with more content')
+        return Promise.resolve(data + ' with more content')
     }
 
     function modifyJson (data, req, res) {
         data.b = 'b';
-        return JSON.parse(JSON.stringify(data));
+        return Promise.resolve(JSON.parse(JSON.stringify(data)))
     }
 
     function error (data, req, res) {
-        data.foo.bar.hopefully.fails();
+        return Promise.resolve(data)
+            .then(data => data.foo.bar.hopefully.fails())
     }
 
     function error403 (data, req, res) {
-        res.status(403).send({ foo: 'bar '})
+        res.status(403).end();
+        return Promise.resolve(data);
     }
 
     it('should return the munged text result', done => {
         const server = express()
-            .use(mung.send(modifyText))
+            .use(mung.sendAsync(modifyText))
             .get('/', (req, res) => {
                 res.send(originalResponseTextBody);
             });
@@ -58,7 +60,7 @@ describe('mung send', () => {
 
     it('should return a munged json body ', done => {
         const server = express()
-            .use(mung.send(modifyJson))
+            .use(mung.sendAsync(modifyJson))
             .get('/', (req, res) => {
                 res.send(originalResponseJSONBody);
             });
@@ -73,7 +75,7 @@ describe('mung send', () => {
 
     it('should not mung an error response (by default)', done => {
         const server = express()
-            .use(mung.send(modifyText))
+            .use(mung.sendAsync(modifyText))
             .get('/', (req, res) => {
                 res.status(404)
                     .send(originalResponseTextBody);
@@ -90,7 +92,7 @@ describe('mung send', () => {
 
     it('should mung an error response when told to', done => {
         const server = express()
-            .use(mung.send(modifyText, { mungError: true }))
+            .use(mung.sendAsync(modifyText, { mungError: true }))
             .get('/', (req, res) => {
                 res.status(404)
                     .send(originalResponseTextBody);
@@ -106,7 +108,7 @@ describe('mung send', () => {
 
     it('should abort if a response is sent', done => {
         const server = express()
-            .use(mung.send(error403))
+            .use(mung.sendAsync(error403))
             .get('/', (req, res) => {
                 res.status(200)
                     .send(originalResponseTextBody)
@@ -119,7 +121,7 @@ describe('mung send', () => {
 
     it('should 500 on a synchronous exception', done => {
         const server = express()
-            .use(mung.send(error))
+            .use(mung.sendAsync(error))
             .get('/', (req, res) => {
                 res.status(200)
                     .send(originalResponseTextBody);
@@ -132,7 +134,7 @@ describe('mung send', () => {
 
     it('should 500 on an asynchronous exception', done => {
         const server = express()
-            .use(mung.send(error))
+            .use(mung.sendAsync(error))
             .get('/', (req, res) => {
                 process.nextTick(() => {
                     res.status(200).send(originalResponseTextBody);
