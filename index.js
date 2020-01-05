@@ -223,14 +223,13 @@ mung.send = function (fn, options = {}) {
             } catch (err) {
                 return mung.onError(err, req, res, next);
             }
-            // If no returned value from fn, then set it back to the original value
-            if (modified === undefined) {
-                modified = data;
-            }
-
             // If the resp has completed,  do nothing
             if (res.finished) {
                 return res;
+            }
+            // If no returned value from fn, then set it back to the original value
+            if (modified === undefined) {
+                modified = data;
             }
 
             // Do not mung on errors
@@ -275,6 +274,11 @@ mung.sendAsync = function (fn, options = {}) {
                     if (res.finished) {
                         return;
                     }
+                    // If no returned value from the promise, then set it back to the original value
+                    if (modified === undefined) {
+                        modified = data;
+                    }
+
                     // Do not mung on errors
                     if (!options.mungError && res.statusCode >= 400) {
                         originalSend.call(res, data);

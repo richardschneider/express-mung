@@ -2,7 +2,7 @@
 
 Middleware for express responses.
 
-This package allows synchronous and asynchronous transformation of an express response.  This is a similar concept to the express middleware for a request but for a response.  Note that the middleware is executed in LIFO order.  It is implemented by monkey patching (hooking) the `res.end`, `res.json`, or `res.write` methods.
+This package allows synchronous and asynchronous transformation of an express response.  This is a similar concept to the express middleware for a request but for a response.  Note that the middleware is executed in LIFO order.  It is implemented by monkey patching (hooking) the `res.end`, `res.json`, `res.send`, or `res.write` methods.
 
 
 ## Getting started [![npm version](https://badge.fury.io/js/express-mung.svg)](https://badge.fury.io/js/express-mung)
@@ -19,7 +19,7 @@ Then in your middleware
 
 Sample middleware (redact.js) to remove classified information.
 
-````javascript
+```javascript
 'use strict';
 const mung = require('express-mung');
 
@@ -31,12 +31,14 @@ function redact(body, req, res) {
 }
 
 module.exports = mung.json(redact);
-````
+```
 
 then add to your `app.js` file (before the route handling middleware)
-````javascript
+
+```javascript
 app.use(require('./redact'))
-````
+```
+
 and [*That's all folks!*](https://www.youtube.com/watch?v=gBzJGckMYO4)
 
 See the mocha [tests](https://github.com/richardschneider/express-mung/tree/master/test) for some more examples.
@@ -71,15 +73,25 @@ Asynchronously transform the HTTP headers of the response.
 
 `fn(chunk, encoding, req, res)` receives the string or buffer as `chunk`, its `encoding` if applicable (`null` otherwise), `req` and `res`. It returns the modified body. If `undefined` is returned (i.e. nothing) then the original unmodified chunk is used.
 
+### mung.send(fn, [options])
+
+`fn(data, req, res)` receives the original `data` from original `res.send(data)`, `req` and `res`. It returns the modified data. If `undefined` is returned (i.e nothing) then the original unmodified data is used.
+
+### mung.sendAsync(fn, [options])
+
+Asynchronously transform the data of `res.send`.
+
+`fn(data, req, res)` receives the original `data` from original `res.send(data)`, `req` and `res`. It returns a promise to a modified data. If `undefined` is returned (i.e nothing) then the original unmodified data is used.
+
 ### Notes
 
 * when `mung.json*` receives a scalar value then the `content-type` is switched `text-plain`.
 
-* when `mung.json*` detects that a response has been sent, it will abort.
+* when `mung.json*` or `mung.send*` detects that a response has been sent, it will abort.
 
 * sending a response while in `mung.headers*` is **undefined behaviour** and will most likely result in an error.
 
-* when `mung.write` detects that a response has completed (i.e. if `res.end` has been called), it will abort.
+* when `mung.write` or `mung.send*` detects that a response has completed (i.e. if `res.end` has been called), it will abort.
 
 * calling `res.json` or `res.send` from `mung.write` can lead to unexpected behavior since they end the response internally.
 
