@@ -211,4 +211,96 @@ mung.write = function write (fn, options = {}) {
     }
 }
 
+mung.send = function (fn, options = {}) {
+    return function (req, res, next) {
+        const originalSend = res.send;
+
+        res.send = function (data) {
+            res.send = originalSend;
+            let modified;
+            try {
+                modified = fn(data, req, res);
+            } catch (err) {
+                return mung.onError(err, req, res, next);
+            }
+            // If the resp has completed,  do nothing
+            if (res.finished) {
+                return res;
+            }
+            // If no returned value from fn, then set it back to the original value
+            if (modified === undefined) {
+                modified = data;
+            }
+
+            // Do not mung on errors
+            if (!options.mungError && res.statusCode >= 400) {
+                return originalSend.call(res, data);
+            }
+
+            return originalSend.call(res, modified);
+        }
+
+        next && next();
+    }
+}
+
+mung.sendAsync = function (fn, options = {}) {
+    return function (req, res, next) {
+        const originalSend = res.send;
+        const originalEnd = res.end;
+
+        //  if end() is called outside async hook, do it actually
+        res.__inHook = false;
+        res.__isEnd = false;
+        res.end = function () {
+            res.__isEnd = true;
+            if (!res.__inHook) {
+                res.end = originalEnd;
+                return res.end();
+            }
+        };
+        res.send = function (data) {
+            res.end = originalEnd;
+            res.send = originalSend;
+
+            if (res.finished) {
+                return res;
+            }
+
+            //  during async hook processing
+            res.__inHook = true;
+            try {
+                fn(data, req, res).then(modified => {
+                    if (res.finished) {
+                        return;
+                    }
+                    // If no returned value from the promise, then set it back to the original value
+                    if (modified === undefined) {
+                        modified = data;
+                    }
+
+                    // Do not mung on errors
+                    if (!options.mungError && res.statusCode >= 400) {
+                        originalSend.call(res, data);
+                        return;
+                    }
+                    originalSend.call(res, modified);
+
+                    if (res.__isEnd) {
+                        res.end();
+                    }
+                    res.__inHook = false;
+                    return;
+                }).catch(err => {
+                    mung.onError(err, req, res, next)
+                });
+            } catch (err) {
+                mung.onError(err, req, res, next)
+            }
+            return res;
+        }
+        next && next();
+    }
+}
+
 module.exports = mung;
