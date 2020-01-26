@@ -30,7 +30,7 @@
   "devDependencies": {
     "bluebird": "^3.5.1",
     "express": "^4.16.3",
-    "mocha": "^5.2.0",
+    "mocha": "^7.0.1",
     "should": "^13.2.3",
     "supertest": "^3.1.0"
   },
