@@ -137,9 +137,9 @@ mung.headersAsync = function headersAsync (fn) {
             return mung.onError(e, req, res, next);
         };
         function headers_async_hook () {
+            let args = arguments;
             if (res.headersSent)
                 return original.apply(this, args);
-            let args = arguments;
             res.end = () => null;
             try {
                 fn(req, res)
